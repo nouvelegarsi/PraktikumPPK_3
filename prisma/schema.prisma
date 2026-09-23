@@ -1,0 +1,68 @@
+// prisma/schema.prisma
+// ============================================================
+// PENTING: File ini adalah schema GABUNGAN seluruh tim.
+// Modul A  → model User, Session
+// Modul B  → model Category, Transaction  ← bagian ini
+// Jangan di-push parsial. Push hanya setelah schema digabung.
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Modul A ─────────────────────────────────────────────────
+// Stub di bawah ini hanya untuk foreign key transaksi bisa resolve.
+// Implementasi lengkap User & Session dikerjakan Modul A.
+
+model User {
+  id            Int           @id @default(autoincrement())
+  nama          String        @db.VarChar(100)
+  email         String        @unique @db.VarChar(150)
+  password_hash String
+  created_at    DateTime      @default(now())
+  sessions      Session[]
+  transactions  Transaction[]
+
+  @@map("users")
+}
+
+model Session {
+  session_id String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    Int
+  expires_at DateTime
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ── Modul B ─────────────────────────────────────────────────
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  nama         String        @db.VarChar(50)
+  jenis        String?       @db.VarChar(20) // 'pemasukan' | 'pengeluaran' | null (umum)
+  transactions Transaction[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  category_id Int?
+  jenis       String    @db.VarChar(20) // 'pemasukan' | 'pengeluaran'
+  jumlah      Decimal   @db.Decimal(12, 2)
+  deskripsi   String?
+  tanggal     DateTime  @db.Date
+  created_at  DateTime  @default(now())
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [category_id], references: [id])
+
+  @@map("transactions")
+}
