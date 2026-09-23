@@ -1,9 +1,3 @@
-// lib/prisma.ts
-// Setup Prisma 7 dengan driver adapter pg (untuk PostgreSQL lokal).
-// Prisma 7 TIDAK load .env otomatis saat runtime, jadi DATABASE_URL
-// harus sudah ada di process.env sebelum file ini dijalankan.
-// Next.js App Router membaca .env.local secara otomatis, jadi aman.
-
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
