@@ -72,6 +72,10 @@ npm run dev
 ```
 
 Buka `http://localhost:3000` di browser.
+path : 
+login : http://localhost:3000/login
+dashboard : http://localhost:3000/dashboard
+transaksi : http://localhost:3000/transactions
 
 > Catatan: Prisma 7 menggunakan Prisma Client baru (`prisma-client`, bukan `prisma-client-js`) sebagai default — pastikan `generator client` di `schema.prisma` menyesuaikan.
 
