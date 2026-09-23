@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  nama         String    @db.VarChar(100)
-  email        String    @unique @db.VarChar(150)
-  passwordHash String    @map("password_hash")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id           Int           @id @default(autoincrement())
+  nama         String        @db.VarChar(100)
+  email        String        @unique @db.VarChar(150)
+  passwordHash String        @map("password_hash")
+  createdAt    DateTime      @default(now()) @map("created_at")
   sessions     Session[]
   transactions Transaction[]
+
   @@map("users")
 }
 
@@ -24,14 +25,16 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
+
   @@map("sessions")
 }
 
 model Category {
   id           Int           @id @default(autoincrement())
   nama         String        @db.VarChar(50)
-  jenis        String        @db.VarChar(20)
+  jenis        String?       @db.VarChar(20)
   transactions Transaction[]
+
   @@map("categories")
 }
 
@@ -46,5 +49,6 @@ model Transaction {
   deskripsi  String?
   tanggal    DateTime  @db.Date
   createdAt  DateTime  @default(now()) @map("created_at")
+
   @@map("transactions")
 }

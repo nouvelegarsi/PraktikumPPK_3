@@ -170,7 +170,7 @@ export type CategoryGroupByArgs<ExtArgs extends runtime.Types.Extensions.Interna
 export type CategoryGroupByOutputType = {
   id: number
   nama: string
-  jenis: string
+  jenis: string | null
   _count: CategoryCountAggregateOutputType | null
   _avg: CategoryAvgAggregateOutputType | null
   _sum: CategorySumAggregateOutputType | null
@@ -199,14 +199,14 @@ export type CategoryWhereInput = {
   NOT?: Prisma.CategoryWhereInput | Prisma.CategoryWhereInput[]
   id?: Prisma.IntFilter<"Category"> | number
   nama?: Prisma.StringFilter<"Category"> | string
-  jenis?: Prisma.StringFilter<"Category"> | string
+  jenis?: Prisma.StringNullableFilter<"Category"> | string | null
   transactions?: Prisma.TransactionListRelationFilter
 }
 
 export type CategoryOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   nama?: Prisma.SortOrder
-  jenis?: Prisma.SortOrder
+  jenis?: Prisma.SortOrderInput | Prisma.SortOrder
   transactions?: Prisma.TransactionOrderByRelationAggregateInput
 }
 
@@ -216,14 +216,14 @@ export type CategoryWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.CategoryWhereInput[]
   NOT?: Prisma.CategoryWhereInput | Prisma.CategoryWhereInput[]
   nama?: Prisma.StringFilter<"Category"> | string
-  jenis?: Prisma.StringFilter<"Category"> | string
+  jenis?: Prisma.StringNullableFilter<"Category"> | string | null
   transactions?: Prisma.TransactionListRelationFilter
 }, "id">
 
 export type CategoryOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   nama?: Prisma.SortOrder
-  jenis?: Prisma.SortOrder
+  jenis?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.CategoryCountOrderByAggregateInput
   _avg?: Prisma.CategoryAvgOrderByAggregateInput
   _max?: Prisma.CategoryMaxOrderByAggregateInput
@@ -237,50 +237,50 @@ export type CategoryScalarWhereWithAggregatesInput = {
   NOT?: Prisma.CategoryScalarWhereWithAggregatesInput | Prisma.CategoryScalarWhereWithAggregatesInput[]
   id?: Prisma.IntWithAggregatesFilter<"Category"> | number
   nama?: Prisma.StringWithAggregatesFilter<"Category"> | string
-  jenis?: Prisma.StringWithAggregatesFilter<"Category"> | string
+  jenis?: Prisma.StringNullableWithAggregatesFilter<"Category"> | string | null
 }
 
 export type CategoryCreateInput = {
   nama: string
-  jenis: string
+  jenis?: string | null
   transactions?: Prisma.TransactionCreateNestedManyWithoutCategoryInput
 }
 
 export type CategoryUncheckedCreateInput = {
   id?: number
   nama: string
-  jenis: string
+  jenis?: string | null
   transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutCategoryInput
 }
 
 export type CategoryUpdateInput = {
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transactions?: Prisma.TransactionUpdateManyWithoutCategoryNestedInput
 }
 
 export type CategoryUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   transactions?: Prisma.TransactionUncheckedUpdateManyWithoutCategoryNestedInput
 }
 
 export type CategoryCreateManyInput = {
   id?: number
   nama: string
-  jenis: string
+  jenis?: string | null
 }
 
 export type CategoryUpdateManyMutationInput = {
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CategoryUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CategoryCountOrderByAggregateInput = {
@@ -314,6 +314,10 @@ export type CategoryNullableScalarRelationFilter = {
   isNot?: Prisma.CategoryWhereInput | null
 }
 
+export type NullableStringFieldUpdateOperationsInput = {
+  set?: string | null
+}
+
 export type CategoryCreateNestedOneWithoutTransactionsInput = {
   create?: Prisma.XOR<Prisma.CategoryCreateWithoutTransactionsInput, Prisma.CategoryUncheckedCreateWithoutTransactionsInput>
   connectOrCreate?: Prisma.CategoryCreateOrConnectWithoutTransactionsInput
@@ -332,13 +336,13 @@ export type CategoryUpdateOneWithoutTransactionsNestedInput = {
 
 export type CategoryCreateWithoutTransactionsInput = {
   nama: string
-  jenis: string
+  jenis?: string | null
 }
 
 export type CategoryUncheckedCreateWithoutTransactionsInput = {
   id?: number
   nama: string
-  jenis: string
+  jenis?: string | null
 }
 
 export type CategoryCreateOrConnectWithoutTransactionsInput = {
@@ -359,13 +363,13 @@ export type CategoryUpdateToOneWithWhereWithoutTransactionsInput = {
 
 export type CategoryUpdateWithoutTransactionsInput = {
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CategoryUncheckedUpdateWithoutTransactionsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   nama?: Prisma.StringFieldUpdateOperationsInput | string
-  jenis?: Prisma.StringFieldUpdateOperationsInput | string
+  jenis?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -441,7 +445,7 @@ export type $CategoryPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     nama: string
-    jenis: string
+    jenis: string | null
   }, ExtArgs["result"]["category"]>
   composites: {}
 }
