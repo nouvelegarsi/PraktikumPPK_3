@@ -49,53 +49,71 @@ export default function LoginPage() {
 
 
 
-          <form className="mt-6 space-y-5">
+            <form
+            className="mt-6 space-y-5"
+            onSubmit={async (e) => {
+                e.preventDefault();
 
+                const formData = new FormData(e.currentTarget);
 
+                const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    email: formData.get("email"),
+                    password: formData.get("password"),
+                }),
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                window.location.href = "/dashboard";
+                } else {
+                alert(data.message);
+                }
+            }}
+            >
             <div>
-
-              <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700">
                 Email
-              </label>
+                </label>
 
-
-              <input
+                <input
+                name="email"
                 type="email"
                 placeholder="nama@email.com"
+                required
                 className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-              />
-
+                />
             </div>
-
 
 
             <div>
-
-              <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-gray-700">
                 Password
-              </label>
+                </label>
 
-
-              <input
+                <input
+                name="password"
                 type="password"
                 placeholder="Masukkan password"
+                required
                 className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-3 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-              />
-
-
+                />
             </div>
-
 
 
             <button
-              type="submit"
-              className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+                type="submit"
+                className="w-full rounded-xl bg-emerald-600 py-3 font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
             >
-              Masuk
+                Masuk
             </button>
 
-
-          </form>
+            </form>
 
 
 
