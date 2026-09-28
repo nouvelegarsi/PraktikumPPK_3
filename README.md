@@ -23,6 +23,12 @@ Sebagai mahasiswa, saya ingin mencatat pemasukan dan pengeluaran saya melalui ap
 | SRS-011 | Dashboard ringkasan keuangan. | - Menampilkan nama pengguna, saldo, total pemasukan, total pengeluaran<br>- Menampilkan 5 transaksi terbaru<br>- Saldo = total pemasukan − total pengeluaran |
 | SRS-012 | Cookie preferensi pengguna (tema & bahasa). | - Preferensi tema (dark/light) tersimpan di cookie<br>- Preferensi bahasa (ID/EN) tersimpan di cookie<br>- Preferensi otomatis diterapkan saat aplikasi dibuka kembali |
 | SRS-013 | Halaman pengaturan preferensi. | - Pengguna dapat mengubah tema & bahasa dari halaman pengaturan<br>- Perubahan langsung tersimpan ke cookie |
+| SRS-014 | AJAX Dashboard & Filter Manajemen Transaksi. | - Dashboard dan data transaksi dapat diperbarui menggunakan AJAX tanpa reload halaman<br>- Filter transaksi dapat diterapkan tanpa reload halaman<br>- Data yang ditampilkan sesuai dengan filter yang dipilih |
+| SRS-015 | Set Budget Bulanan. | - Pengguna dapat menetapkan budget untuk bulan tertentu<br>- Budget terhubung dengan user yang sedang login<br>- Nilai budget harus berupa angka positif |
+| SRS-016 | Validasi Kepemilikan Budget User. | - Pengguna hanya dapat melihat budget miliknya sendiri<br>- Pengguna hanya dapat mengubah atau menghapus budget miliknya sendiri<br>- Percobaan mengakses budget user lain ditolak |
+| SRS-017 | Budget Summary. | - Menampilkan total budget bulanan<br>- Menampilkan total pengeluaran pada periode yang dipilih<br>- Menampilkan sisa budget berdasarkan budget dikurangi total pengeluaran |
+| SRS-018 | Budget Indicator. | - Menampilkan indikator kondisi budget berdasarkan penggunaan budget<br>- Indikator diperbarui sesuai perubahan total pengeluaran dan budget |
+| SRS-019 | Monthly Budget. | - Menampilkan data budget berdasarkan bulan yang dipilih<br>- Pengguna dapat melihat budget untuk periode bulan yang berbeda |
 
 ## Kebutuhan Non-Fungsional
 
