@@ -67,12 +67,17 @@ export default function TransactionsPage() {
       const res = await fetch(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) {
+        if (res.status === 401) {
+        router.push("/login");
+        return;
+        }
+
+        if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Gagal menghapus");
         return;
-      }
-      setTransactions((prev) => prev.filter((t) => t.id !== id));
+        }
+        setTransactions((prev) => prev.filter((t) => t.id !== id));
     } catch {
       alert("Terjadi kesalahan.");
     } finally {

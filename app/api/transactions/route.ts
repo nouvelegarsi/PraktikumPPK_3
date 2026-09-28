@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const transactions = await prisma.transaction.findMany({
     where: {
-      user_id: user.id, // SRS-018: selalu filter dari session
+      userId: user.id, // SRS-018: selalu filter dari session
       ...(jenis && (jenis === "pemasukan" || jenis === "pengeluaran")
         ? { jenis }
         : {}),
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { jenis, category_id, jumlah, tanggal, deskripsi } = body;
+  const { jenis, categoryId, jumlah, tanggal, deskripsi } = body;
 
   // Validasi field wajib
   if (!jenis || !jumlah || !tanggal) {
@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
 
   const transaction = await prisma.transaction.create({
     data: {
-      user_id: user.id, // SRS-006: otomatis dari session, bukan dari form
+      userId: user.id, // SRS-006: otomatis dari session, bukan dari form
       jenis,
-      category_id: category_id ? Number(category_id) : null,
+      categoryId: categoryId ? Number(categoryId) : null,
       jumlah: Number(jumlah),
       tanggal: new Date(tanggal),
       deskripsi: deskripsi || null,

@@ -12,7 +12,7 @@ async function getOwnedTransaction(id: number, userId: number) {
   if (!transaction) return { error: "Transaksi tidak ditemukan", status: 404 };
 
   // SRS-011 & SRS-008 & SRS-009: validasi kepemilikan
-  if (transaction.user_id !== userId) {
+  if (transaction.userId !== userId) {
     return { error: "Forbidden", status: 403 };
   }
 
@@ -51,34 +51,115 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
+
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { id: idStr } = await params;
   const id = Number(idStr);
+
   if (isNaN(id)) {
-    return NextResponse.json({ error: "ID tidak valid" }, { status: 400 });
-  }
-
-  const owned = await getOwnedTransaction(id, user.id);
-  if ("error" in owned) {
-    return NextResponse.json({ error: owned.error }, { status: owned.status });
-  }
-
-  const body = await req.json();
-  const { jenis, category_id, jumlah, tanggal, deskripsi } = body;
-
-  if (jenis && jenis !== "pemasukan" && jenis !== "pengeluaran") {
     return NextResponse.json(
-      { error: "Jenis harus 'pemasukan' atau 'pengeluaran'" },
+      { error: "ID tidak valid" },
       { status: 400 }
     );
   }
 
-  if (jumlah && (isNaN(Number(jumlah)) || Number(jumlah) <= 0)) {
+  // Pastikan transaksi milik user yang sedang login
+  const owned = await getOwnedTransaction(id, user.id);
+
+  if ("error" in owned) {
+    return NextResponse.json(
+      { error: owned.error },
+      { status: owned.status }
+    );
+  }
+
+  const body = await req.json();
+
+  const {
+    jenis,
+    categoryId,
+    jumlah,
+    tanggal,
+    deskripsi,
+  } = body;
+
+  // Validasi jenis transaksi
+  if (
+    jenis !== undefined &&
+    jenis !== "pemasukan" &&
+    jenis !== "pengeluaran"
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Jenis harus 'pemasukan' atau 'pengeluaran'",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Validasi jumlah
+  if (
+    jumlah !== undefined &&
+    (isNaN(Number(jumlah)) || Number(jumlah) <= 0)
+  ) {
     return NextResponse.json(
       { error: "Jumlah harus berupa angka positif" },
+      { status: 400 }
+    );
+  }
+
+  // Validasi categoryId
+  let parsedCategoryId: number | null | undefined = undefined;
+
+  if (categoryId !== undefined) {
+    // User memang memilih "Tanpa Kategori"
+    if (
+      categoryId === null ||
+      categoryId === ""
+    ) {
+      parsedCategoryId = null;
+    } else {
+      const categoryNumber = Number(categoryId);
+
+      if (isNaN(categoryNumber)) {
+        return NextResponse.json(
+          { error: "Kategori tidak valid" },
+          { status: 400 }
+        );
+      }
+
+      // Pastikan kategori memang ada
+      const category = await prisma.category.findUnique({
+        where: {
+          id: categoryNumber,
+        },
+      });
+
+      if (!category) {
+        return NextResponse.json(
+          { error: "Kategori tidak ditemukan" },
+          { status: 404 }
+        );
+      }
+
+      parsedCategoryId = categoryNumber;
+    }
+  }
+
+  // Validasi tanggal
+  if (
+    tanggal !== undefined &&
+    isNaN(new Date(tanggal).getTime())
+  ) {
+    return NextResponse.json(
+      { error: "Tanggal tidak valid" },
       { status: 400 }
     );
   }
@@ -86,13 +167,28 @@ export async function PUT(
   const updated = await prisma.transaction.update({
     where: { id },
     data: {
-      ...(jenis && { jenis }),
-      ...(category_id !== undefined && {
-        category_id: category_id ? Number(category_id) : null,
+      ...(jenis !== undefined && {
+        jenis,
       }),
-      ...(jumlah && { jumlah: Number(jumlah) }),
-      ...(tanggal && { tanggal: new Date(tanggal) }),
-      ...(deskripsi !== undefined && { deskripsi: deskripsi || null }),
+
+      ...(parsedCategoryId !== undefined && {
+        categoryId: parsedCategoryId,
+      }),
+
+      ...(jumlah !== undefined && {
+        jumlah: Number(jumlah),
+      }),
+
+      ...(tanggal !== undefined && {
+        tanggal: new Date(tanggal),
+      }),
+
+      ...(deskripsi !== undefined && {
+        deskripsi:
+          deskripsi.trim() === ""
+            ? null
+            : deskripsi.trim(),
+      }),
     },
     include: { category: true },
   });
