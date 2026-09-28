@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import BudgetSummary from "@/app/components/BudgetSummary";
 
 function formatRupiah(jumlah: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -156,6 +157,10 @@ export default async function Dashboard() {
             </p>
           </div>
         </div>
+
+        {/* BUDGET BULANAN (AJAX) */}
+        <BudgetSummary bahasa={bahasa} />
+
 
         {/* TRANSAKSI TERBARU */}
         <div className="mt-8 rounded-xl bg-white p-6 shadow dark:bg-gray-800">
