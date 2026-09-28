@@ -9,20 +9,57 @@ import { getSessionUser } from "@/lib/auth";
 // SRS-018 — Query difilter user_id dari session, bukan dari client
 export async function GET(req: NextRequest) {
   const user = await getSessionUser();
+
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const { searchParams } = new URL(req.url);
-  const jenis = searchParams.get("jenis"); // 'pemasukan' | 'pengeluaran' | null
+
+  const jenis = searchParams.get("jenis");
+  const categoryId = searchParams.get("categoryId");
+  const startDate = searchParams.get("startDate");
+  const endDate = searchParams.get("endDate");
+
+  const where: any = {
+    userId: user.id,
+  };
+
+  if (
+    jenis === "pemasukan" ||
+    jenis === "pengeluaran"
+  ) {
+    where.jenis = jenis;
+  }
+
+  if (categoryId) {
+    const parsedCategoryId = Number(categoryId);
+
+    if (!Number.isNaN(parsedCategoryId)) {
+      where.categoryId = parsedCategoryId;
+    }
+  }
+
+  if (startDate || endDate) {
+    where.tanggal = {};
+
+    if (startDate) {
+      where.tanggal.gte = new Date(startDate);
+    }
+
+    if (endDate) {
+      const date = new Date(endDate);
+      date.setDate(date.getDate() + 1);
+
+      where.tanggal.lt = date;
+    }
+  }
 
   const transactions = await prisma.transaction.findMany({
-    where: {
-      userId: user.id, // SRS-018: selalu filter dari session
-      ...(jenis && (jenis === "pemasukan" || jenis === "pengeluaran")
-        ? { jenis }
-        : {}),
-    },
+    where,
     include: {
       category: true,
     },

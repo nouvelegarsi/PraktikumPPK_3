@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
+import DashboardBudget from "./DashboardBudget";
 
 function formatRupiah(jumlah: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -65,41 +66,41 @@ export default async function Dashboard() {
   const teks =
     bahasa === "en"
       ? {
-          dashboard: "Dashboard",
-          welcome: "Welcome",
-          saldo: "Current Balance",
-          pemasukan: "Total Income",
-          pengeluaran: "Total Expenses",
-          transaksi: "Recent Transactions",
-          tanggal: "Date",
-          deskripsi: "Description",
-          kategori: "Category",
-          jenis: "Type",
-          jumlah: "Amount",
-          pemasukanJenis: "Income",
-          pengeluaranJenis: "Expense",
-          tanpaKategori: "No Category",
-          tanpaDeskripsi: "-",
-          kosong: "No transactions yet.",
-        }
+        dashboard: "Dashboard",
+        welcome: "Welcome",
+        saldo: "Current Balance",
+        pemasukan: "Total Income",
+        pengeluaran: "Total Expenses",
+        transaksi: "Recent Transactions",
+        tanggal: "Date",
+        deskripsi: "Description",
+        kategori: "Category",
+        jenis: "Type",
+        jumlah: "Amount",
+        pemasukanJenis: "Income",
+        pengeluaranJenis: "Expense",
+        tanpaKategori: "No Category",
+        tanpaDeskripsi: "-",
+        kosong: "No transactions yet.",
+      }
       : {
-          dashboard: "Dashboard",
-          welcome: "Selamat datang",
-          saldo: "Saldo Saat Ini",
-          pemasukan: "Total Pemasukan",
-          pengeluaran: "Total Pengeluaran",
-          transaksi: "Transaksi Terbaru",
-          tanggal: "Tanggal",
-          deskripsi: "Deskripsi",
-          kategori: "Kategori",
-          jenis: "Jenis",
-          jumlah: "Jumlah",
-          pemasukanJenis: "Pemasukan",
-          pengeluaranJenis: "Pengeluaran",
-          tanpaKategori: "Tanpa Kategori",
-          tanpaDeskripsi: "-",
-          kosong: "Belum ada transaksi.",
-        };
+        dashboard: "Dashboard",
+        welcome: "Selamat datang",
+        saldo: "Saldo Saat Ini",
+        pemasukan: "Total Pemasukan",
+        pengeluaran: "Total Pengeluaran",
+        transaksi: "Transaksi Terbaru",
+        tanggal: "Tanggal",
+        deskripsi: "Deskripsi",
+        kategori: "Kategori",
+        jenis: "Jenis",
+        jumlah: "Jumlah",
+        pemasukanJenis: "Pemasukan",
+        pengeluaranJenis: "Pengeluaran",
+        tanpaKategori: "Tanpa Kategori",
+        tanpaDeskripsi: "-",
+        kosong: "Belum ada transaksi.",
+      };
 
   return (
     <main className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900">
@@ -134,6 +135,13 @@ export default async function Dashboard() {
             </p>
           </div>
 
+          <DashboardBudget />
+
+          {/* TRANSAKSI TERBARU */}
+          <div className="mt-8 rounded-xl bg-white p-6 shadow dark:bg-gray-800">
+
+          </div>
+          
           {/* PEMASUKAN */}
           <div className="rounded-xl bg-white p-5 shadow dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -224,11 +232,10 @@ export default async function Dashboard() {
 
                       {/* JUMLAH */}
                       <td
-                        className={`px-4 py-3 text-right font-medium ${
-                          item.jenis === "pemasukan"
+                        className={`px-4 py-3 text-right font-medium ${item.jenis === "pemasukan"
                             ? "text-green-600"
                             : "text-red-600"
-                        }`}
+                          }`}
                       >
                         {item.jenis === "pemasukan" ? "+" : "-"}
                         {formatRupiah(Number(item.jumlah))}
