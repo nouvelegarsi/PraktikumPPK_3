@@ -29,25 +29,56 @@ export default function TransactionsPage() {
   const router = useRouter();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<FilterJenis>("semua");
+  const [categoryId, setCategoryId] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const fetchTransactions = async (jenis: FilterJenis) => {
+  const fetchTransactions = async () => {
     setLoading(true);
     setError("");
+
     try {
-      const url =
-        jenis === "semua"
-          ? "/api/transactions"
-          : `/api/transactions?jenis=${jenis}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams();
+
+      if (filter !== "semua") {
+        params.set("jenis", filter);
+      }
+
+      if (categoryId) {
+        params.set("categoryId", categoryId);
+      }
+
+      if (startDate) {
+        params.set("startDate", startDate);
+      }
+
+      if (endDate) {
+        params.set("endDate", endDate);
+      }
+
+      const query = params.toString();
+
+      const res = await fetch(
+        query
+          ? `/api/transactions?${query}`
+          : "/api/transactions"
+      );
+
       if (res.status === 401) {
         router.push("/login");
         return;
       }
-      if (!res.ok) throw new Error("Gagal memuat transaksi");
+
+      if (!res.ok) {
+        throw new Error("Gagal memuat transaksi");
+      }
+
       const data = await res.json();
+
       setTransactions(data);
     } catch {
       setError("Gagal memuat transaksi. Coba lagi.");
@@ -57,8 +88,26 @@ export default function TransactionsPage() {
   };
 
   useEffect(() => {
-    fetchTransactions(filter);
-  }, [filter]);
+    fetchTransactions();
+  }, [filter, categoryId, startDate, endDate]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("/api/categories");
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        setCategories(data);
+      } catch {
+        // kategori gagal dimuat tidak menghentikan halaman transaksi
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Hapus transaksi ini?")) return;
@@ -67,17 +116,17 @@ export default function TransactionsPage() {
       const res = await fetch(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-        if (res.status === 401) {
+      if (res.status === 401) {
         router.push("/login");
         return;
-        }
+      }
 
-        if (!res.ok) {
+      if (!res.ok) {
         const data = await res.json();
         alert(data.error || "Gagal menghapus");
         return;
-        }
-        setTransactions((prev) => prev.filter((t) => t.id !== id));
+      }
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
     } catch {
       alert("Terjadi kesalahan.");
     } finally {
@@ -125,16 +174,66 @@ export default function TransactionsPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                  filter === f
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-                }`}
+                className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${filter === f
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                  }`}
               >
                 {f}
               </button>
             )
           )}
+        </div>
+
+        <div className="mb-6 grid gap-3 rounded-xl bg-white p-4 shadow-sm md:grid-cols-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Kategori
+            </label>
+
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            >
+              <option value="">Semua kategori</option>
+
+              {categories.map((category) => (
+                <option
+                  key={category.id}
+                  value={category.id}
+                >
+                  {category.nama}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Dari tanggal
+            </label>
+
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Sampai tanggal
+            </label>
+
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+            />
+          </div>
         </div>
 
         {/* States */}
@@ -171,11 +270,10 @@ export default function TransactionsPage() {
                 {/* Left */}
                 <div className="flex items-center gap-4">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
-                      t.jenis === "pemasukan"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-500"
-                    }`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${t.jenis === "pemasukan"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-500"
+                      }`}
                   >
                     {t.jenis === "pemasukan" ? "↑" : "↓"}
                   </div>
@@ -193,11 +291,10 @@ export default function TransactionsPage() {
                 {/* Right */}
                 <div className="flex items-center gap-3">
                   <span
-                    className={`text-sm font-semibold ${
-                      t.jenis === "pemasukan"
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
+                    className={`text-sm font-semibold ${t.jenis === "pemasukan"
+                      ? "text-green-600"
+                      : "text-red-500"
+                      }`}
                   >
                     {t.jenis === "pemasukan" ? "+" : "-"}
                     {formatRupiah(t.jumlah)}

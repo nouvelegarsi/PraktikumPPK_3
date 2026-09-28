@@ -185,7 +185,7 @@ export async function PUT(
 
       ...(deskripsi !== undefined && {
         deskripsi:
-          deskripsi.trim() === ""
+          deskripsi === null || deskripsi.trim() === ""
             ? null
             : deskripsi.trim(),
       }),
