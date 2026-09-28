@@ -19,6 +19,41 @@ function formatRupiah(jumlah: number) {
   }).format(jumlah);
 }
 
+type StatusBudget = "aman" | "mendekati" | "melebihi";
+
+type GayaStatus = {
+  bar: string;
+  badge: string;
+};
+
+function hitungStatus(anggaran: number, pengeluaran: number) {
+  if (anggaran <= 0) return null;
+
+  const persen = (pengeluaran / anggaran) * 100;
+  let status: StatusBudget = "aman";
+  if (persen > 100) status = "melebihi";
+  else if (persen >= 80) status = "mendekati";
+
+  return { persen, status };
+}
+
+const gayaStatus: Record<StatusBudget, GayaStatus> = {
+  aman: {
+    bar: "bg-green-500",
+    badge:
+      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  mendekati: {
+    bar: "bg-yellow-500",
+    badge:
+      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+  melebihi: {
+    bar: "bg-red-600",
+    badge: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+};
+
 export default function BudgetSummary({ bahasa }: { bahasa: string }) {
   const [data, setData] = useState<Ringkasan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -44,6 +79,13 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
           belum: "No budget set for this month yet.",
           gagalMuat: "Failed to load budget data.",
           gagalSimpan: "Failed to save budget.",
+          terpakai: "used",
+          statusAman: "Safe",
+          statusMendekati: "Near limit",
+          statusMelebihi: "Over budget",
+          pesanAman: "Your spending is still within a safe range.",
+          pesanMendekati: "Your spending is close to the budget limit.",
+          pesanMelebihi: "Your spending exceeds the budget by",
         }
       : {
           judul: "Budget Bulanan",
@@ -60,6 +102,13 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
           belum: "Anggaran bulan ini belum diatur.",
           gagalMuat: "Gagal memuat data budget.",
           gagalSimpan: "Gagal menyimpan anggaran.",
+          terpakai: "terpakai",
+          statusAman: "Aman",
+          statusMendekati: "Mendekati batas",
+          statusMelebihi: "Melebihi anggaran",
+          pesanAman: "Pengeluaranmu masih dalam batas aman.",
+          pesanMendekati: "Pengeluaranmu sudah mendekati batas anggaran.",
+          pesanMelebihi: "Pengeluaranmu melebihi anggaran sebesar",
         };
 
   async function ambilData() {
@@ -97,13 +146,31 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
       }
       setEditing(false);
       setInput("");
-      await ambilData(); // refresh kartu tanpa reload halaman
+      await ambilData(); 
     } catch (err) {
       setError(err instanceof Error ? err.message : teks.gagalSimpan);
     } finally {
       setSaving(false);
     }
   }
+
+  const indikator = data
+    ? hitungStatus(data.totalAnggaran, data.totalPengeluaran)
+    : null;
+
+  const labelStatus = {
+    aman: teks.statusAman,
+    mendekati: teks.statusMendekati,
+    melebihi: teks.statusMelebihi,
+  };
+
+  const pesanStatus = {
+    aman: teks.pesanAman,
+    mendekati: teks.pesanMendekati,
+    melebihi: `${teks.pesanMelebihi} ${formatRupiah(
+      Math.abs(data?.sisaAnggaran ?? 0)
+    )}.`,
+  };
 
   const namaBulan = data
     ? new Intl.DateTimeFormat(bahasa === "en" ? "en-US" : "id-ID", {
@@ -205,6 +272,44 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
                 </p>
               </div>
             </div>
+
+            {indikator && (
+              <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                      gayaStatus[indikator.status].badge
+                    }`}
+                  >
+                    {labelStatus[indikator.status]}
+                  </span>
+
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {Math.round(indikator.persen)}% {teks.terpakai}
+                  </span>
+                </div>
+
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(Math.round(indikator.persen), 100)}
+                  aria-label={labelStatus[indikator.status]}
+                  className="mt-3 h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600"
+                >
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      gayaStatus[indikator.status].bar
+                    }`}
+                    style={{ width: `${Math.min(indikator.persen, 100)}%` }}
+                  />
+                </div>
+
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  {pesanStatus[indikator.status]}
+                </p>
+              </div>
+            )}
           </>
         )
       )}
