@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 type Ringkasan = {
   bulan: number;
   tahun: number;
-  sudahDiatur: boolean;
   totalAnggaran: number;
   totalPengeluaran: number;
   sisaAnggaran: number;
@@ -19,13 +18,43 @@ function formatRupiah(jumlah: number) {
   }).format(jumlah);
 }
 
+type StatusBudget = "aman" | "mendekati" | "melebihi";
+
+type GayaStatus = {
+  bar: string;
+  badge: string;
+};
+
+function hitungStatus(anggaran: number, pengeluaran: number) {
+  if (anggaran <= 0) return null;
+
+  const persen = (pengeluaran / anggaran) * 100;
+  let status: StatusBudget = "aman";
+  if (persen > 100) status = "melebihi";
+  else if (persen >= 80) status = "mendekati";
+
+  return { persen, status };
+}
+
+const gayaStatus: Record<StatusBudget, GayaStatus> = {
+  aman: {
+    bar: "bg-green-500",
+    badge: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+  },
+  mendekati: {
+    bar: "bg-yellow-500",
+    badge: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  },
+  melebihi: {
+    bar: "bg-red-600",
+    badge: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  },
+};
+
 export default function BudgetSummary({ bahasa }: { bahasa: string }) {
   const [data, setData] = useState<Ringkasan | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [input, setInput] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [editing, setEditing] = useState(false);
 
   const teks =
     bahasa === "en"
@@ -34,32 +63,30 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
           anggaran: "Total Budget",
           pengeluaran: "Total Expenses",
           sisa: "Remaining Budget",
-          atur: "Set budget",
-          ubah: "Edit budget",
-          simpan: "Save",
-          menyimpan: "Saving...",
-          batal: "Cancel",
-          placeholder: "Budget amount (Rp)",
           memuat: "Loading...",
-          belum: "No budget set for this month yet.",
           gagalMuat: "Failed to load budget data.",
-          gagalSimpan: "Failed to save budget.",
+          terpakai: "used",
+          statusAman: "Safe",
+          statusMendekati: "Near limit",
+          statusMelebihi: "Over budget",
+          pesanAman: "Your spending is still within a safe range.",
+          pesanMendekati: "Your spending is close to the budget limit.",
+          pesanMelebihi: "Your spending exceeds the budget by",
         }
       : {
           judul: "Budget Bulanan",
           anggaran: "Total Anggaran",
           pengeluaran: "Total Pengeluaran",
           sisa: "Sisa Anggaran",
-          atur: "Atur anggaran",
-          ubah: "Ubah anggaran",
-          simpan: "Simpan",
-          menyimpan: "Menyimpan...",
-          batal: "Batal",
-          placeholder: "Jumlah anggaran (Rp)",
           memuat: "Memuat...",
-          belum: "Anggaran bulan ini belum diatur.",
           gagalMuat: "Gagal memuat data budget.",
-          gagalSimpan: "Gagal menyimpan anggaran.",
+          terpakai: "terpakai",
+          statusAman: "Aman",
+          statusMendekati: "Mendekati batas",
+          statusMelebihi: "Melebihi anggaran",
+          pesanAman: "Pengeluaranmu masih dalam batas aman.",
+          pesanMendekati: "Pengeluaranmu sudah mendekati batas anggaran.",
+          pesanMelebihi: "Pengeluaranmu melebihi anggaran sebesar",
         };
 
   async function ambilData() {
@@ -80,30 +107,23 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function simpanAnggaran(e: React.SyntheticEvent) {
-    e.preventDefault();
-    setSaving(true);
-    setError("");
+  const indikator = data
+    ? hitungStatus(data.totalAnggaran, data.totalPengeluaran)
+    : null;
 
-    try {
-      const res = await fetch("/api/budget", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jumlah: Number(input) }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.message || teks.gagalSimpan);
-      }
-      setEditing(false);
-      setInput("");
-      await ambilData(); // refresh kartu tanpa reload halaman
-    } catch (err) {
-      setError(err instanceof Error ? err.message : teks.gagalSimpan);
-    } finally {
-      setSaving(false);
-    }
-  }
+  const labelStatus = {
+    aman: teks.statusAman,
+    mendekati: teks.statusMendekati,
+    melebihi: teks.statusMelebihi,
+  };
+
+  const pesanStatus = {
+    aman: teks.pesanAman,
+    mendekati: teks.pesanMendekati,
+    melebihi: `${teks.pesanMelebihi} ${formatRupiah(
+      Math.abs(data?.sisaAnggaran ?? 0)
+    )}.`,
+  };
 
   const namaBulan = data
     ? new Intl.DateTimeFormat(bahasa === "en" ? "en-US" : "id-ID", {
@@ -114,63 +134,17 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
 
   return (
     <div className="mt-8 rounded-xl bg-white p-6 shadow dark:bg-gray-800">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-          {teks.judul} {namaBulan && `- ${namaBulan}`}
-        </h2>
-
-        {!editing && data && (
-          <button
-            onClick={() => {
-              setInput(data.sudahDiatur ? String(data.totalAnggaran) : "");
-              setEditing(true);
-            }}
-            className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 dark:bg-white dark:text-gray-900"
-          >
-            {data.sudahDiatur ? teks.ubah : teks.atur}
-          </button>
-        )}
-      </div>
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        {teks.judul} {namaBulan && `- ${namaBulan}`}
+      </h2>
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-
-      {editing && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <input
-            type="number"
-            min="1"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={teks.placeholder}
-            className="w-64 rounded-lg border border-gray-300 px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-          />
-          <button
-            onClick={simpanAnggaran}
-            disabled={saving || !input}
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {saving ? teks.menyimpan : teks.simpan}
-          </button>
-          <button
-            onClick={() => setEditing(false)}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-700 dark:border-gray-600 dark:text-gray-200"
-          >
-            {teks.batal}
-          </button>
-        </div>
-      )}
 
       {loading ? (
         <p className="mt-4 text-sm text-gray-400">{teks.memuat}</p>
       ) : (
         data && (
           <>
-            {!data.sudahDiatur && (
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                {teks.belum}
-              </p>
-            )}
-
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-300">
@@ -196,15 +170,51 @@ export default function BudgetSummary({ bahasa }: { bahasa: string }) {
                 </p>
                 <p
                   className={`mt-1 text-xl font-bold ${
-                    data.sisaAnggaran < 0
-                      ? "text-red-600"
-                      : "text-green-600"
+                    data.sisaAnggaran < 0 ? "text-red-600" : "text-green-600"
                   }`}
                 >
                   {formatRupiah(data.sisaAnggaran)}
                 </p>
               </div>
             </div>
+
+            {indikator && (
+              <div className="mt-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-700">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                      gayaStatus[indikator.status].badge
+                    }`}
+                  >
+                    {labelStatus[indikator.status]}
+                  </span>
+
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {Math.round(indikator.persen)}% {teks.terpakai}
+                  </span>
+                </div>
+
+                <div
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.min(Math.round(indikator.persen), 100)}
+                  aria-label={labelStatus[indikator.status]}
+                  className="mt-3 h-3 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-600"
+                >
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      gayaStatus[indikator.status].bar
+                    }`}
+                    style={{ width: `${Math.min(indikator.persen, 100)}%` }}
+                  />
+                </div>
+
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  {pesanStatus[indikator.status]}
+                </p>
+              </div>
+            )}
           </>
         )
       )}

@@ -68,6 +68,13 @@ export default async function MainLayout({
             </Link>
 
             <Link
+              href="/budget"
+              className="mb-2 block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+            >
+              Budget
+            </Link>
+
+            <Link
               href="/pengaturan"
               className="block rounded-lg px-4 py-3 text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
             >
