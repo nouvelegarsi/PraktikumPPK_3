@@ -34,12 +34,12 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!sessionId) return null;
 
   const session = await prisma.session.findUnique({
-    where: { session_id: sessionId },
+    where: { sessionId: sessionId },
     include: { user: true },
   });
 
   if (!session) return null;
-  if (new Date() > session.expires_at) return null;
+  if (new Date() > session.expiresAt) return null;
 
   return {
     id: session.user.id,
