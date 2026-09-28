@@ -1,42 +1,8 @@
 import { cookies } from "next/headers";
-
-const transaksi = [
-  {
-    tanggal: "23 September 2026",
-    deskripsi: "Makan siang",
-    kategori: "Makanan",
-    jenis: "pengeluaran",
-    jumlah: 25000,
-  },
-  {
-    tanggal: "22 September 2026",
-    deskripsi: "Uang saku",
-    kategori: "Pemasukan",
-    jenis: "pemasukan",
-    jumlah: 500000,
-  },
-  {
-    tanggal: "21 September 2026",
-    deskripsi: "Transportasi",
-    kategori: "Transportasi",
-    jenis: "pengeluaran",
-    jumlah: 15000,
-  },
-  {
-    tanggal: "20 September 2026",
-    deskripsi: "Beli buku",
-    kategori: "Pendidikan",
-    jenis: "pengeluaran",
-    jumlah: 75000,
-  },
-  {
-    tanggal: "19 September 2026",
-    deskripsi: "Freelance",
-    kategori: "Pemasukan",
-    jenis: "pemasukan",
-    jumlah: 300000,
-  },
-];
+import { redirect } from "next/navigation";
+import LogoutButton from "@/app/components/LogoutButton";
+import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 
 function formatRupiah(jumlah: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -47,22 +13,55 @@ function formatRupiah(jumlah: number) {
 }
 
 export default async function Dashboard() {
-  const cookieStore = await cookies();
+  // =========================
+  // CEK SESSION USER
+  // =========================
+  const user = await getSessionUser();
 
+  if (!user) {
+    redirect("/login");
+  }
+
+  // =========================
+  // AMBIL COOKIE LANGUAGE
+  // =========================
+  const cookieStore = await cookies();
   const bahasa = cookieStore.get("language")?.value || "id";
 
-  const nama = "Nama Pengguna";
+  // =========================
+  // AMBIL TRANSAKSI USER
+  // =========================
+  const transaksi = await prisma.transaction.findMany({
+    where: {
+      userId: user.id,
+    },
+    include: {
+      category: true,
+    },
+    orderBy: {
+      tanggal: "desc",
+    },
+  });
 
+  // =========================
+  // HITUNG TOTAL
+  // =========================
   const totalPemasukan = transaksi
     .filter((item) => item.jenis === "pemasukan")
-    .reduce((total, item) => total + item.jumlah, 0);
+    .reduce((total, item) => total + Number(item.jumlah), 0);
 
   const totalPengeluaran = transaksi
     .filter((item) => item.jenis === "pengeluaran")
-    .reduce((total, item) => total + item.jumlah, 0);
+    .reduce((total, item) => total + Number(item.jumlah), 0);
 
   const saldo = totalPemasukan - totalPengeluaran;
 
+  // Hanya tampilkan 5 transaksi terbaru
+  const transaksiTerbaru = transaksi.slice(0, 5);
+
+  // =========================
+  // TEXT LANGUAGE
+  // =========================
   const teks =
     bahasa === "en"
       ? {
@@ -76,8 +75,12 @@ export default async function Dashboard() {
           deskripsi: "Description",
           kategori: "Category",
           jenis: "Type",
+          jumlah: "Amount",
           pemasukanJenis: "Income",
           pengeluaranJenis: "Expense",
+          tanpaKategori: "No Category",
+          tanpaDeskripsi: "-",
+          kosong: "No transactions yet.",
         }
       : {
           dashboard: "Dashboard",
@@ -90,27 +93,37 @@ export default async function Dashboard() {
           deskripsi: "Deskripsi",
           kategori: "Kategori",
           jenis: "Jenis",
+          jumlah: "Jumlah",
           pemasukanJenis: "Pemasukan",
           pengeluaranJenis: "Pengeluaran",
+          tanpaKategori: "Tanpa Kategori",
+          tanpaDeskripsi: "-",
+          kosong: "Belum ada transaksi.",
         };
 
   return (
     <main className="min-h-screen bg-gray-100 p-6 dark:bg-gray-900">
       <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {teks.dashboard}
-          </h1>
 
-          <p className="mt-2 text-gray-600 dark:text-gray-300">
-            {teks.welcome}, {nama}
-          </p>
+        {/* HEADER */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {teks.dashboard}
+            </h1>
+
+            <p className="mt-2 text-gray-600 dark:text-gray-300">
+              {teks.welcome}, {user.nama}
+            </p>
+          </div>
+
+          <LogoutButton />
         </div>
 
-        {/* Ringkasan Keuangan */}
+        {/* RINGKASAN KEUANGAN */}
         <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {/* Saldo */}
+
+          {/* SALDO */}
           <div className="rounded-xl bg-white p-5 shadow dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {teks.saldo}
@@ -121,7 +134,7 @@ export default async function Dashboard() {
             </p>
           </div>
 
-          {/* Pemasukan */}
+          {/* PEMASUKAN */}
           <div className="rounded-xl bg-white p-5 shadow dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {teks.pemasukan}
@@ -132,7 +145,7 @@ export default async function Dashboard() {
             </p>
           </div>
 
-          {/* Pengeluaran */}
+          {/* PENGELUARAN */}
           <div className="rounded-xl bg-white p-5 shadow dark:bg-gray-800">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {teks.pengeluaran}
@@ -144,7 +157,7 @@ export default async function Dashboard() {
           </div>
         </div>
 
-        {/* Transaksi Terbaru */}
+        {/* TRANSAKSI TERBARU */}
         <div className="mt-8 rounded-xl bg-white p-6 shadow dark:bg-gray-800">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {teks.transaksi}
@@ -165,41 +178,64 @@ export default async function Dashboard() {
               </thead>
 
               <tbody>
-                {transaksi.map((item, index) => (
-                  <tr
-                    key={index}
-                    className="border-b last:border-0 dark:border-gray-700"
-                  >
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {item.tanggal}
-                    </td>
-
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                      {item.deskripsi}
-                    </td>
-
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
-                      {item.kategori}
-                    </td>
-
-                    <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                      {item.jenis === "pemasukan"
-                        ? teks.pemasukanJenis
-                        : teks.pengeluaranJenis}
-                    </td>
-
+                {transaksiTerbaru.length === 0 ? (
+                  <tr>
                     <td
-                      className={`px-4 py-3 text-right font-medium ${
-                        item.jenis === "pemasukan"
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-sm text-gray-400"
                     >
-                      {item.jenis === "pemasukan" ? "+" : "-"}
-                      {formatRupiah(item.jumlah)}
+                      {teks.kosong}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  transaksiTerbaru.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b last:border-0 dark:border-gray-700"
+                    >
+                      {/* TANGGAL */}
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                        {new Intl.DateTimeFormat(
+                          bahasa === "en" ? "en-US" : "id-ID",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          }
+                        ).format(new Date(item.tanggal))}
+                      </td>
+
+                      {/* DESKRIPSI */}
+                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                        {item.deskripsi || teks.tanpaDeskripsi}
+                      </td>
+
+                      {/* KATEGORI */}
+                      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
+                        {item.category?.nama || teks.tanpaKategori}
+                      </td>
+
+                      {/* JENIS */}
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
+                        {item.jenis === "pemasukan"
+                          ? teks.pemasukanJenis
+                          : teks.pengeluaranJenis}
+                      </td>
+
+                      {/* JUMLAH */}
+                      <td
+                        className={`px-4 py-3 text-right font-medium ${
+                          item.jenis === "pemasukan"
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {item.jenis === "pemasukan" ? "+" : "-"}
+                        {formatRupiah(Number(item.jumlah))}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
