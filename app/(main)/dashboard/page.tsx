@@ -3,11 +3,8 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/app/components/LogoutButton";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/auth";
-<<<<<<< HEAD
 import BudgetSummary from "@/app/components/BudgetSummary";
-=======
 import DashboardBudget from "./DashboardBudget";
->>>>>>> origin/feature/srs-013-014
 
 function formatRupiah(jumlah: number) {
   return new Intl.NumberFormat("id-ID", {
